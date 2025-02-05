@@ -1,0 +1,58 @@
+#include <SoftwareSerial.h>
+
+#define BUZZER 11
+SoftwareSerial sim800(7, 8);  // TX to D7, RX to D8
+
+void setup() {
+    Serial.begin(9600);
+    sim800.begin(9600);
+    pinMode(BUZZER, OUTPUT);
+    Serial.println("System Ready...");
+}
+
+void loop() {
+    if (Serial.available() > 0) {
+        char signal = Serial.read();
+        
+        if (signal == '2') {  // Unauthorized face detected
+            Serial.println("🚨 Unknown Face Detected! Sending Alert...");
+            
+            // Beep-Beep-Beep Sound
+            beepBuzzer();
+
+            // Send SMS & Call Immediately
+            sendSMS("Unknown Face Detected!");
+            makeCall();
+        }
+    }
+}
+
+void beepBuzzer() {
+    for (int i = 0; i < 3; i++) {  // Beep 3 times
+        digitalWrite(BUZZER, HIGH);
+        delay(300);
+        digitalWrite(BUZZER, LOW);
+        delay(300);
+    }
+    Serial.println("🔔 Beeping Done!");
+}
+
+void sendSMS(String message) {
+    sim800.println("AT+CMGF=1");  // Set SMS mode
+    delay(500);
+    sim800.println("AT+CMGS=\"+917847014067\"");  // Replace with your number
+    delay(500);
+    sim800.println(message);
+    delay(500);
+    sim800.write(26);  // End message with CTRL+Z
+    Serial.println("📩 SMS Sent!");
+    delay(5000);  // Wait before calling
+}
+
+void makeCall() {
+    sim800.println("ATD+917847014067;");  // Dial the number
+    Serial.println("📞 Calling...");
+    delay(20000);  // Allow call for 20s
+    sim800.println("ATH");  // Hang up the call
+    Serial.println("📞 Call Ended");
+}
